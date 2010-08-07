@@ -2,6 +2,7 @@
 
 @interface SCObserver : NSObject {
 	CPDistributedMessagingCenter *center;
+	NSSet *allowedPaths;
 }
 
 + (id)sharedObserver;
@@ -33,6 +34,24 @@ typedef enum {
 
 - (id)init {
 	if((self = [super init])) {
+		NSMutableSet *allowed = [NSMutableSet set];
+		
+		NSMutableArray *contents = [[[[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/etc/sandcastle/allowed.list.d" error:NULL] mutableCopy] autorelease];
+		[contents addObject:@"../allowed.list"];
+		
+		for (NSString *path in contents) {
+			NSString *text = [NSString stringWithContentsOfFile:[@"/etc/sandcastle/allowed.list.d/" stringByAppendingString:path] encoding:NSUTF8StringEncoding error:NULL];
+			NSArray *components = [text componentsSeparatedByString:@"\n"];
+			
+			for (NSString *line in components) {
+				line = [line substringFromIndex:[line rangeOfString:@"#"].location];
+				line = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+				if (line && ![line isEqual:@""]) [allowed addObject:line];
+			}
+		}
+		
+		allowedPaths = [allowed copy];
+		
 		center = [[CPDistributedMessagingCenter centerNamed:@"com.collab.sandcastle.center"] retain];
 		[center runServerOnCurrentThread];
 
@@ -40,6 +59,20 @@ typedef enum {
 	}
 	
 	return self;
+}
+
+- (BOOL)verifyPath:(NSString *)path {
+	path = [path stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	
+	while (![path isEqual:@""] && ![path isEqual:@"/"]) {
+		// We need to check both the directory and file case.
+		if ([allowedPaths member:path]) return YES;
+		if ([allowedPaths member:[path stringByAppendingString:@"/"]]) return YES;
+		
+		path = [path stringByDeletingLastPathComponent];
+	}
+	
+	return NO;
 }
 
 /* Valid actions: [remove|delete], move, copy, write, read, append, link, mkdir, stat, list, exists */
@@ -58,6 +91,11 @@ typedef enum {
 	NSString *destPath = [paths objectAtIndex:kSCDestinationPath];
 	NSString *sourcePath = [paths objectAtIndex:kSCSourcePath];
 	
+	if (![self verifyPath:destPath] || ![self verifyPath:sourcePath]) {
+		error = @"Source or destination path is not allowed, please add entry sandcastle.list.d to access."; 
+		goto error; 
+	}
+	 
 	if ([type isEqual:@"remove"] || [type isEqual:@"delete"]) {
 		if (destPath == nil) { error = @"No destination path provided to remove."; goto error; }
 		

@@ -113,8 +113,8 @@
 }
 
 - (NSString *)temporaryPathToMove {
-	char temp[] = "sandcastle.XXXXXX";
-	return [NSString stringWithUTF8String:mktemp(temp)];
+	char path[] = "sandcastle.XXXXXX";
+	return [NSString stringWithUTF8String:mktemp(path)];
 }
 
 @end
