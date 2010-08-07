@@ -1,88 +1,130 @@
 #include <CPDistributedMessagingCenter.h>
 #include <SandCastle.h>
 
-static SandCastle *sharedInstance = nil;
-
-@implementation SandCastle
+@implementation SCClient
 
 - (id)init {
 	if((self = [super init])) {
-		center = [CPDistributedMessagingCenter centerNamed:@"me.haunold.sandcastle.center"];
+		center = [CPDistributedMessagingCenter centerNamed:@"com.collab.sandcastle.center"];
 	}
 	
 	return self;
 }
 
-- (NSString *)temporaryPathForFileName:(NSString *)fileName {
-	CFUUIDRef uuidObj = CFUUIDCreate(nil);
-	NSString *newUUID = (NSString *)CFUUIDCreateString(nil, uuidObj);
-	CFRelease(uuidObj);
-	return [@"/var/mobile/Library/Preferences" stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", [newUUID autorelease], [fileName pathExtension]]];
-}
-
-- (void)moveTemporaryFile:(NSString *)file toResolvedPath:(NSString *)path {
-	NSDictionary *_params = [NSDictionary dictionaryWithObjectsAndKeys:	file, @"SandCastleTemporaryFile",
-																		path, @"SandCastleResolvedPath",
-																		nil, nil];
++ (id)sharedInstance {
+	static SCClient *sharedInstance = nil;
 	
-	[center sendMessageName:@"MoveNotification" userInfo:_params];
-}
-
-- (void)removeItemAtResolvedPath:(NSString *)path {
-	NSDictionary *_params = [NSDictionary dictionaryWithObjectsAndKeys:	path, @"SandCastleResolvedPath",
-																		nil, nil];
-	
-	[center sendMessageName:@"RemoveNotification" userInfo:_params];
-}
-
-#pragma mark -
-#pragma mark Singleton Stuff
-
-+ (SandCastle *)sharedInstance {
 	@synchronized(self) {
 		if (sharedInstance == nil)
-			sharedInstance = [[SandCastle alloc] init];
+			sharedInstance = [[SCClient alloc] init];
 	}
+	
 	return sharedInstance;
 }
 
-+ (id)allocWithZone:(NSZone *)zone {
-	@synchronized(self) {
-		if (sharedInstance == nil) {
-			sharedInstance = [super allocWithZone:zone];
-			return sharedInstance;
-		}
+- (id)messageDictionaryWithAction:(NSString *)action sourcePath:(NSString *)sourcePath destPath:(NSString *)destPath {
+	NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+	
+	[dict setObject:action forKey:@"type"];
+	[dict setObject:[NSArray arrayWithObjects:destPath ?: @"", sourcePath ?: @"", nil] forKey:@"target"];
+	
+	return dict;
+}
+
+- (NSDictionary *)performActionWithDictionary:(NSDictionary *)dict error:(NSError **)error {
+	NSDictionary *reply = [center sendMessageAndReceiveReplyName:@"sandcastle.notification" userInfo:dict];
+	
+	if (error) {
+		NSString *err = [reply objectForKey:@"error"];
+		if (err) *error = [NSError errorWithDomain:@"SCError" code:[err hash] userInfo:[NSDictionary dictionaryWithObjectsAndKeys:err, NSLocalizedDescriptionKey, nil]];
+		else *error = nil;
 	}
-	return nil;
+	
+	return reply;
 }
 
-- (id)copyWithZone:(NSZone *)zone {
-	return self;
+- (NSData *)readFileAtPath:(NSString *)path error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"read" sourcePath:path destPath:nil];	
+	NSDictionary *result = [self performActionWithDictionary:info error:error];
+	return [result objectForKey:@"data"];
+} 
+
+- (BOOL)writeData:(NSData *)data toPath:(NSString *)path error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"write" sourcePath:nil destPath:path];	
+	[info setObject:data forKey:@"data"];
+	[self performActionWithDictionary:info error:error];
+	return !*error;
 }
 
-- (id)retain {
-	return self;
+- (BOOL)appendData:(NSData *)data toPath:(NSString *)path error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"append" sourcePath:nil destPath:path];	
+	[info setObject:data forKey:@"data"];
+	[self performActionWithDictionary:info error:error];
+	return !*error;
 }
 
-- (unsigned)retainCount {
-	return UINT_MAX;
+- (BOOL)copyItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"copy" sourcePath:srcPath destPath:dstPath];	
+	[self performActionWithDictionary:info error:error];
+	return !*error;
 }
 
-- (void)release { }
+- (BOOL)moveItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"move" sourcePath:srcPath destPath:dstPath];	
+	[self performActionWithDictionary:info error:error];
+	return !*error;
+}
 
-- (id)autorelease {
-	return self;
+- (BOOL)linkItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"link" sourcePath:srcPath destPath:dstPath];	
+	[self performActionWithDictionary:info error:error];
+	return !*error;
+}
+
+- (BOOL)removeItemAtPath:(NSString *)path error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"remove" sourcePath:nil destPath:path];	
+	[self performActionWithDictionary:info error:error];
+	return !*error;
+}
+
+- (BOOL)fileExistsAtPath:(NSString *)path error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"exists" sourcePath:path destPath:nil];	
+	[self performActionWithDictionary:info error:error];
+	return [[info objectForKey:@"exists"] boolValue];
+}
+
+- (BOOL)createDirectoryAtPath:(NSString *)path withIntermediateDirectories:(BOOL)createIntermediates error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"mkdir" sourcePath:nil destPath:path];	
+	[info setObject:[NSNumber numberWithBool:createIntermediates] forKey:@"create-intermediates"];
+	[self performActionWithDictionary:info error:error];
+	return !*error;
+}
+
+- (NSArray *)contentsOfDirectoryAtPath:(NSString *)path error:(NSError **)error {
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"list" sourcePath:path destPath:nil];	
+	NSDictionary *result = [self performActionWithDictionary:info error:error];
+	return [result objectForKey:@"items"];
+}
+
+- (NSDictionary *)attributesOfItemAtPath:(NSString *)path error:(NSError **)error { 
+	NSMutableDictionary *info = [self messageDictionaryWithAction:@"stat" sourcePath:path destPath:nil];	
+	NSDictionary *result = [self performActionWithDictionary:info error:error];
+	return [result objectForKey:@"stat"];
+}
+
+- (NSString *)temporaryPathToMove {
+	char temp[] = "sandcastle.XXXXXX";
+	return [NSString stringWithUTF8String:mktemp(temp)];
 }
 
 @end
 
 
-static __attribute__((constructor)) void YourTubeHDInitialize() {
+static __attribute__((constructor)) void sandcastle_init() {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
 	%init;
-	
-	[SandCastle sharedInstance];
+	[SCClient sharedInstance];
 	
 	[pool release];
 }
