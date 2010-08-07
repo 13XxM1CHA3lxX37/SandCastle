@@ -207,7 +207,7 @@ static __attribute__((constructor)) void sandcastle_init() {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
 	%init;	      
-	[[SCObserver alloc] sharedObserver];
+	[SCObserver sharedObserver];
 	
 	[pool release];
 }
