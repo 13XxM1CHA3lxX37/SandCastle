@@ -6,4 +6,4 @@ Architecture: iphoneos-arm
 Description: Access nearly every directory from a sandboxed application.
 Author: chpwn <support@chpwn.com>
 Section: Development
-Tag: role:developer
+Tag: role::developer
