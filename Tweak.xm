@@ -1,6 +1,6 @@
 #include <CPDistributedMessagingCenter.h>
 
-@interface SCObserver : NSObject {
+@interface SCThreeObserver : NSObject {
 	CPDistributedMessagingCenter *center;
 	NSSet *allowedPaths;
 }
@@ -20,10 +20,10 @@ typedef enum {
 	kSCSourcePath
 } SCPathIndex;
 
-@implementation SCObserver
+@implementation SCThreeObserver
 
 + (id)sharedObserver {
-	static SCObserver *observer = nil;
+	static SCThreeObserver *observer = nil;
 	
 	if (observer == nil)
 		observer = [[self alloc] init];
@@ -205,7 +205,7 @@ static __attribute__((constructor)) void sandcastle_init() {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
 	%init;	      
-	[SCObserver sharedObserver];
+	[SCThreeObserver sharedObserver];
 	
 	[pool release];
 }
