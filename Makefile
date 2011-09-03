@@ -1,7 +1,7 @@
-TWEAK_NAME = sandcastle
-sandcastle_LOGOS_FILES = Tweak.xm
-sandcastle_PRIVATE_FRAMEWORKS = AppSupport
-sandcastle_CFLAGS=-I.
+TWEAK_NAME = sandcastlev3
+sandcastlev3_LOGOS_FILES = Tweak.xm
+sandcastlev3_PRIVATE_FRAMEWORKS = AppSupport
+sandcastlev3_CFLAGS=-I.
 
 SUBPROJECTS = client
 
