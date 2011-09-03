@@ -1,7 +1,7 @@
-TWEAK_NAME = sandcastlev3
-sandcastlev3_LOGOS_FILES = Tweak.xm
-sandcastlev3_PRIVATE_FRAMEWORKS = AppSupport
-sandcastlev3_CFLAGS=-I.
+TWEAK_NAME = sandstone
+sandstone_LOGOS_FILES = Tweak.xm
+sandstone_PRIVATE_FRAMEWORKS = AppSupport
+sandstone_CFLAGS=-I.
 
 SUBPROJECTS = client
 

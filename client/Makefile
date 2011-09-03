@@ -1,7 +1,7 @@
-TWEAK_NAME = sandcastleclientv3
-sandcastleclientv3_FILES = Tweak.xm
-sandcastleclientv3_CFLAGS=-I.. -I.
-sandcastleclientv3_PRIVATE_FRAMEWORKS = AppSupport
+TWEAK_NAME = sandstoneclient
+sandstoneclient_FILES = Tweak.xm
+sandstoneclient_CFLAGS=-I.. -I.
+sandstoneclient_PRIVATE_FRAMEWORKS = AppSupport
 
 
 include ../framework/makefiles/common.mk
