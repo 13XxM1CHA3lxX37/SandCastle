@@ -1,12 +1,12 @@
 #include <Foundation/Foundation.h>
 
-@class SCClient, CPDistributedMessagingCenter;
+@class SandStoneClient, CPDistributedMessagingCenter;
 
-@interface SCClient : NSObject {
+@interface SandStoneClient : NSObject {
 	CPDistributedMessagingCenter *center;
 }
 
-+ (SCClient *)sharedInstance;
++ (SandStoneClient *)sharedInstance;
 
 - (BOOL)copyItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error;
 - (BOOL)moveItemAtPath:(NSString *)srcPath toPath:(NSString *)dstPath error:(NSError **)error;

@@ -1,7 +1,7 @@
 #include <CPDistributedMessagingCenter.h>
-#include <SandCastle.h>
+#include <SandStone.h>
 
-@implementation SCClient
+@implementation SandStoneClient
 
 - (id)init {
 	if((self = [super init])) {
@@ -12,11 +12,11 @@
 }
 
 + (id)sharedInstance {
-	static SCClient *sharedInstance = nil;
+	static SandStoneClient *sharedInstance = nil;
 	
 	@synchronized(self) {
 		if (sharedInstance == nil)
-			sharedInstance = [[SCClient alloc] init];
+			sharedInstance = [[SandStoneClient alloc] init];
 	}
 	
 	return sharedInstance;
@@ -36,7 +36,7 @@
 	
 	if (error) {
 		NSString *err = [reply objectForKey:@"error"];
-		if (err) *error = [NSError errorWithDomain:@"SCError" code:[err hash] userInfo:[NSDictionary dictionaryWithObjectsAndKeys:err, NSLocalizedDescriptionKey, nil]];
+		if (err) *error = [NSError errorWithDomain:@"SandStoneError" code:[err hash] userInfo:[NSDictionary dictionaryWithObjectsAndKeys:err, NSLocalizedDescriptionKey, nil]];
 		else *error = nil;
 	}
 	
@@ -130,7 +130,7 @@ static __attribute__((constructor)) void sandcastle_init() {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
 	%init;
-	[SCClient sharedInstance];
+	[SandStoneClient sharedInstance];
 	
 	[pool release];
 }
