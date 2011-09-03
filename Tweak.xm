@@ -4,7 +4,6 @@
 	CPDistributedMessagingCenter *center;
 	NSSet *allowedPaths;
 }
-
 + (id)sharedObserver;
 - (NSDictionary *)handleNotification:(NSString *)name userInfo:(NSDictionary *)userInfo;
 
@@ -34,7 +33,6 @@ typedef enum {
 
 - (id)init {
 	if((self = [super init])) {
-		/*
 		NSMutableSet *allowed = [NSMutableSet set];
 		
 		NSMutableArray *contents = [[[[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/etc/sandcastle/allowed.list.d" error:NULL] mutableCopy] autorelease];
@@ -45,14 +43,12 @@ typedef enum {
 			NSArray *components = [text componentsSeparatedByString:@"\n"];
 			
 			for (NSString *line in components) {
-				line = [line substringFromIndex:[line rangeOfString:@"#"].location];
 				line = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+				if([line hasPrefix:@"#"]) continue;
 				if (line && ![line isEqual:@""]) [allowed addObject:line];
 			}
 		}
-		
 		allowedPaths = [allowed copy];
-		*/
 		center = [[CPDistributedMessagingCenter centerNamed:@"com.collab.sandcastle.center"] retain];
 		[center runServerOnCurrentThread];
 
@@ -63,7 +59,17 @@ typedef enum {
 }
 
 - (BOOL)verifyPath:(NSString *)path {
-	return YES;
+	BOOL root=NO;
+	while (![path isEqual:@""]&&!([path isEqual:@"/"]&&root)) {
+		// We need to check both the directory and file case.
+		if ([allowedPaths member:path]) return YES;
+		if ([allowedPaths member:[path stringByAppendingString:@"/"]]) return YES;
+		NSLog(@"path: %@", path);
+		if([path isEqual:@"/"])
+			root=YES;
+		path = [path stringByDeletingLastPathComponent];
+	}
+	return NO;
 }
 
 /* Valid actions: [remove|delete], move, copy, write, read, append, link, mkdir, stat, list, exists */
@@ -82,7 +88,7 @@ typedef enum {
 	NSString *destPath = [paths objectAtIndex:kSCDestinationPath];
 	NSString *sourcePath = [paths objectAtIndex:kSCSourcePath];
 	
-	if (![self verifyPath:destPath] || ![self verifyPath:sourcePath]) {
+	if (!([self verifyPath:destPath] || [self verifyPath:sourcePath])) {
 		error = @"Source or destination path is not allowed, please add entry sandcastle.list.d to access."; 
 		goto error; 
 	}
@@ -156,10 +162,10 @@ typedef enum {
 		[result setObject:contents forKey:@"list"];
 	} else if ([type isEqual:@"exists"]) {
 		if (sourcePath == nil) { error = @"No source path provided."; goto error; }
-        BOOL isDir=NO;
+	        BOOL isDir=NO;
 		BOOL exists = [manager fileExistsAtPath:sourcePath isDirectory:&isDir];
-        [result setObject:[NSNumber numberWithBool:isDir] forKey:@"isDir"];
-        [result setObject:[NSNumber numberWithBool:exists] forKey:@"exists"];
+	        [result setObject:[NSNumber numberWithBool:isDir] forKey:@"isDir"];
+	        [result setObject:[NSNumber numberWithBool:exists] forKey:@"exists"];
 	} else if ([type isEqual:@"stat"]) {
 		if (sourcePath == nil) { error = @"No source path provided."; goto error; }
 		
@@ -176,7 +182,7 @@ typedef enum {
 		[result setObject:error forKey:@"error"];
 		[result setObject:@"error" forKey:@"status"];
 		
-		NSLog(@"SC:Error: %s", error);
+		NSLog(@"SC:Error: %@", error);
 	} else {
 		if (resultData != nil) {
 			[result setObject:resultData forKey:@"data"];
