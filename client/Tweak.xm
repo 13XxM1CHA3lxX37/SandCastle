@@ -89,8 +89,14 @@
 
 - (BOOL)fileExistsAtPath:(NSString *)path error:(NSError **)error {
 	NSMutableDictionary *info = [self messageDictionaryWithAction:@"exists" sourcePath:path destPath:nil];	
-	[self performActionWithDictionary:info error:error];
-	return [[info objectForKey:@"exists"] boolValue];
+	NSDictionary* result=[self performActionWithDictionary:info error:error];
+	return [[result objectForKey:@"exists"] boolValue];
+}
+- (BOOL)fileExistsAtPath:(NSString *)path isDirectory:(BOOL*)isDir error:(NSError **)error {
+    NSMutableDictionary *info = [self messageDictionaryWithAction:@"exists" sourcePath:path destPath:nil];	
+    NSDictionary* result=[self performActionWithDictionary:info error:error];
+    *isDir=[[result objectForKey:@"isDir"] boolValue];
+    return [[result objectForKey:@"exists"] boolValue];
 }
 
 - (BOOL)createDirectoryAtPath:(NSString *)path withIntermediateDirectories:(BOOL)createIntermediates error:(NSError **)error {
@@ -103,7 +109,7 @@
 - (NSArray *)contentsOfDirectoryAtPath:(NSString *)path error:(NSError **)error {
 	NSMutableDictionary *info = [self messageDictionaryWithAction:@"list" sourcePath:path destPath:nil];	
 	NSDictionary *result = [self performActionWithDictionary:info error:error];
-	return [result objectForKey:@"items"];
+	return [result objectForKey:@"list"];
 }
 
 - (NSDictionary *)attributesOfItemAtPath:(NSString *)path error:(NSError **)error { 
