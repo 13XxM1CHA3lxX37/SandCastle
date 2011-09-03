@@ -1,4 +1,0 @@
-# create your own <file>.list in this directory
-# named corresponding to your app/extension
-# everything after a # is a comment and is ignored
-# insert one path per line, and that file/directory will be allowed by sandcastle
