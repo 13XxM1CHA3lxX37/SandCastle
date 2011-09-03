@@ -34,6 +34,7 @@ typedef enum {
 
 - (id)init {
 	if((self = [super init])) {
+		/*
 		NSMutableSet *allowed = [NSMutableSet set];
 		
 		NSMutableArray *contents = [[[[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/etc/sandcastle/allowed.list.d" error:NULL] mutableCopy] autorelease];
@@ -51,7 +52,7 @@ typedef enum {
 		}
 		
 		allowedPaths = [allowed copy];
-		
+		*/
 		center = [[CPDistributedMessagingCenter centerNamed:@"com.collab.sandcastle.center"] retain];
 		[center runServerOnCurrentThread];
 
@@ -62,17 +63,7 @@ typedef enum {
 }
 
 - (BOOL)verifyPath:(NSString *)path {
-	path = [path stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
-	
-	while (![path isEqual:@""] && ![path isEqual:@"/"]) {
-		// We need to check both the directory and file case.
-		if ([allowedPaths member:path]) return YES;
-		if ([allowedPaths member:[path stringByAppendingString:@"/"]]) return YES;
-		
-		path = [path stringByDeletingLastPathComponent];
-	}
-	
-	return NO;
+	return YES;
 }
 
 /* Valid actions: [remove|delete], move, copy, write, read, append, link, mkdir, stat, list, exists */
@@ -165,9 +156,10 @@ typedef enum {
 		[result setObject:contents forKey:@"list"];
 	} else if ([type isEqual:@"exists"]) {
 		if (sourcePath == nil) { error = @"No source path provided."; goto error; }
-
-		BOOL exists = [manager fileExistsAtPath:sourcePath];
-		[result setObject:[NSNumber numberWithBool:exists] forKey:@"exists"];
+        BOOL isDir=NO;
+		BOOL exists = [manager fileExistsAtPath:sourcePath isDirectory:&isDir];
+        [result setObject:[NSNumber numberWithBool:isDir] forKey:@"isDir"];
+        [result setObject:[NSNumber numberWithBool:exists] forKey:@"exists"];
 	} else if ([type isEqual:@"stat"]) {
 		if (sourcePath == nil) { error = @"No source path provided."; goto error; }
 		
