@@ -1,4 +1,4 @@
-TWEAK_NAME = sandcastleclient
+TWEAK_NAME = sandcastleclientv3
 sandcastleclient_LOGOS_FILES = Tweak.xm
 sandcastleclient_CFLAGS=-I.. -I.
 sandcastleclient_PRIVATE_FRAMEWORKS = AppSupport
